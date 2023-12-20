@@ -20,47 +20,40 @@ router.get("/", function (req, res, next) {
 
 router.post("/register", async (req, res) => {
   try {
-    const {
+    let _body = ({
       user_name,
       user_role,
       user_username,
       user_password,
-      user_mobile,
-      user_department,
-      user_level,
       user_remark,
       user_status,
       user_code,
-    } = req.body
+    } = req.body)
 
     const _hashedPassword = await bcrypt.hash(user_password, 10)
+    _body.user_password = _hashedPassword
 
-    const _data = [
-      user_name,
-      user_role,
-      user_username,
-      _hashedPassword,
-      user_mobile,
-      user_department,
-      user_level,
-      user_remark,
-      user_status,
-      user_code,
-    ]
+    const _data = {
+      user_name: user_name,
+      user_role: user_role,
+      user_username: user_username,
+      user_password: _body.user_password,
+      user_remark: user_remark,
+      user_status: user_status,
+      user_code: user_code,
+    }
 
-    // const _query = {
-    //   text: "INSERT INTO tb_users (user_name, user_role, user_username, user_password, user_mobile, user_department, user_level, user_remark, user_status, user_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-    //   values: _values,
-    // }
+    let _result = await funcs.insertTable("tb_users", _data)
 
-    var _result = await funcs.insertTable("tb_users", _data)
     if (_result.affectedRows > 0) {
-      return res.status(200)
+      return res.send("Inserted").status(200)
     } else {
-      return res.status(400)
+      return res.send("Error").status(400)
     }
   } catch (error) {
-    res.status(500)
+    console.log("catch", error)
+
+    res.send(error).status(500)
   }
 })
 
@@ -68,15 +61,15 @@ router.post("/login", async (req, res) => {
   try {
     const { user_username, user_password } = req.body
 
-    console.log(user_username, user_password)
+    // console.log(user_username, user_password)
 
     const _query =
       "SELECT * FROM tb_users WHERE user_username = '" + user_username + "'"
-	  console.log("_query", _query)
-	  
+    // console.log("_query", _query)
+
     const _result = await funcs.getTable(_query)
 
-    console.log("_result", _result[0])
+    // console.log("_result", _result[0])
 
     const _user_password = _result[0].user_password
     if (!_result) {
@@ -85,15 +78,15 @@ router.post("/login", async (req, res) => {
     if (await bcrypt.compare(user_password, _user_password)) {
       const _token = jwt.sign({ user_username }, process.env.JWTSECRET)
 
-      res.cookie("authToken", _token, { httpOnly: true })
-      //res.json({ _token })
-
-      const _jsonData = JSON.stringify({
+      const _authenInfo = JSON.stringify({
         token: [_token],
         user_info: _result[0],
       })
 
-      console.log("_jsonData", _jsonData)
+      res.cookie("authToken", _authenInfo, { httpOnly: true })
+      //res.json({ _token })
+
+      // console.log("_jsonData", _jsonData)
 
       // ขั้นตอนการแปลงข้อมูลกลับ ฝั่งหน้าบ้าน
       // const _jj = JSON.stringify({
@@ -119,7 +112,7 @@ router.post("/login", async (req, res) => {
       // console.log(jjObj.token[0]);
       // console.log(jjObj.user_info.user_name);
 
-      return res.status(200).send(_jsonData)
+      return res.status(200).send(_authenInfo)
     } else {
       return res.status(401).json({ error: "Invalid credentials" })
     }

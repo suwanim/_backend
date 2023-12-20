@@ -59,36 +59,4 @@ async function runSqlCommand(sql) {
   }
 }
 
-async function runSqlCommand_2Params(sql, params) {
-  try {
-    const data = ["testt", "sk-t4562"];
-    const sql = "SELECT * FROM tb_marketing_cross_ref_relationship WHERE customer_item_code IN (?)";
-    const params = [data];
-
-    console.log("params", params);
-
-
-    const values = data;
-    const _sql = `SELECT * FROM tb_marketing_cross_ref_relationship WHERE customer_item_code IN (${values
-      .map((v) => `'${v}'`)
-      .join(",")})`;
-
-
-    // const data = [params];
-    console.log(data);
-    const connection = await mysql.createConnection(dbConfig);
-    const [rows, fields] = await connection.execute(_sql);
-    connection.end();
-
-
-
-
-    console.log("rows", rows);
-    return rows;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-}
-
-module.exports = { runSqlCommand, runSqlCommand_2Params };
+module.exports = { runSqlCommand };
